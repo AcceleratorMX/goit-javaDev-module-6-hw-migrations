@@ -1,4 +1,3 @@
-
 public class Main {
     public static void main(String[] args) {
         DatabaseInitService databaseInitService = new DatabaseInitService();
@@ -8,13 +7,13 @@ public class Main {
         System.out.println(clientService.listAll());
 
         //create
-        System.out.println(clientService.create("Google"));
+        System.out.println(clientService.create("Apple"));
 
         //deleteById
         System.out.println(clientService.getById(6L));
 
         //setName
-        clientService.setName(6L, "Apple");
+        clientService.setName(6L, "Google");
         System.out.println(clientService.getById(6L));
 
         //deleteById
