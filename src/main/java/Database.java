@@ -11,10 +11,10 @@ public class Database {
     private static Connection connection;
 
     private Database() {
-        Properties props = new Properties();
+        Properties properties = new Properties();
         try {
-            props.load(new FileInputStream("settings.properties"));
-            url = props.getProperty("database_url");
+            properties.load(new FileInputStream("settings.properties"));
+            url = properties.getProperty("database_url");
         } catch (IOException e) {
             throw new RuntimeException("Failed to load database.", e);
         }
