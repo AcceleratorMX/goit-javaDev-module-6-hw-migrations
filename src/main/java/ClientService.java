@@ -6,12 +6,10 @@ import java.util.List;
 
 public class ClientService {
     private final Connection connection;
-    private PreparedStatement preparedStatement;
 
     public ClientService() {
         try {
             connection = getConnection();
-            preparedStatement = null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -24,13 +22,13 @@ public class ClientService {
     public Long create(String name) {
         String insert = "INSERT INTO client (name) VALUES (?)";
 
-        try {
-            preparedStatement = connection.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
             preparedStatement.setString(1, name);
             preparedStatement.executeUpdate();
 
-            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
-            return generatedKeys.next() ? generatedKeys.getLong(1) : null;
+            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                return generatedKeys.next() ? generatedKeys.getLong(1) : null;
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -39,12 +37,12 @@ public class ClientService {
     public String getById(long id) {
         String select = "SELECT id, name FROM client WHERE id = ?";
 
-        try {
-            preparedStatement = connection.prepareStatement(select);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(select)) {
             preparedStatement.setLong(1, id);
-            ResultSet resultSet = preparedStatement.executeQuery();
 
-            return resultSet.next() ? resultSet.getString("name") : null;
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return resultSet.next() ? resultSet.getString("name") : null;
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -53,8 +51,7 @@ public class ClientService {
     public void setName(Long id, String name) {
         String update = "UPDATE client SET name = ? WHERE id = ?";
 
-        try {
-            preparedStatement = connection.prepareStatement(update);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(update)) {
             preparedStatement.setString(1, name);
             preparedStatement.setLong(2, id);
             preparedStatement.execute();
@@ -68,38 +65,35 @@ public class ClientService {
         String deleteProjectDependency = "DELETE FROM project WHERE client_id = ?";
         String deleteClient = "DELETE FROM client WHERE id = ?";
 
-        try {
-            preparedStatement = connection.prepareStatement(deleteProjectWorkerDependency);
-            preparedStatement.setLong(1, id);
-            preparedStatement.execute();
+        try (PreparedStatement projectWorkerDependencyStatement = connection.prepareStatement(deleteProjectWorkerDependency);
+             PreparedStatement projectDependencyStatement = connection.prepareStatement(deleteProjectDependency);
+             PreparedStatement clientStatement = connection.prepareStatement(deleteClient)) {
 
-            preparedStatement = connection.prepareStatement(deleteProjectDependency);
-            preparedStatement.setLong(1, id);
-            preparedStatement.execute();
+            projectWorkerDependencyStatement.setLong(1, id);
+            projectWorkerDependencyStatement.execute();
 
-            preparedStatement = connection.prepareStatement(deleteClient);
-            preparedStatement.setLong(1, id);
-            preparedStatement.execute();
+            projectDependencyStatement.setLong(1, id);
+            projectDependencyStatement.execute();
+
+            clientStatement.setLong(1, id);
+            clientStatement.execute();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
 
-
-
     public List<Client> listAll() {
         String select = "SELECT id, name FROM client ORDER BY id";
         List<Client> clients = new ArrayList<>();
 
-        try {
-            preparedStatement = connection.prepareStatement(select);
-            ResultSet resultSet = preparedStatement.executeQuery();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(select)) {
 
-            while (resultSet.next()) {
-                clients.add(new Client(resultSet.getLong("id"), resultSet.getString("name")));
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    clients.add(new Client(resultSet.getLong("id"), resultSet.getString("name")));
+                }
             }
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
